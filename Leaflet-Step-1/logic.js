@@ -13,10 +13,9 @@ function createFeatures(earthquakeData) {
         layer.bindPopup("<h3>" + feature.properties.place +
         "</h3><hr><p>" + new Date(feature.properties.time) + "</p>");
     };
+    var colorList = ["#99ff33", "#ccff99", "#ffcc66", "#ff9900", "#ff6600", "#ff3300"]
 
-    function pointToFeature(feature, layer) {
-        var colorList = ["#99ff33", "#ccff99", "#ffcc66", "#ff9900", "#ff6600", "#ff3300"]
-
+    function color(feature, layer) {
         var color="";
         if (feature.properties.mag > 5) {
             color = colorList[5];
@@ -36,21 +35,24 @@ function createFeatures(earthquakeData) {
         else {
             color = colorList[0];
         }
+    };
 
-        var markerStyle = {
-            radius: feature.properties.mag * 1000,
-            color: color,
-            fillOpacity: 0.75,
-        }; 
-
+    function markerStyle(feature, layer) {
+        style.radius = feature.properties.mag * 1000,
+        style.fillColor = color,
+        style.color = color,
+        style.fillOpacity = 0.8
     };
 
     // Create a GeoJSON layer containing the features array on the earthquakeData object
     // Run the onEachFeature function once for each piece of data in the array
     var earthquakes = L.geoJSON(earthquakeData, {
-        pointToFeature: pointToFeature,
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, markerStyle);
+        },
         onEachFeature: onEachFeature
     });
+    
   
     // Sending our earthquakes layer to the createMap function
   createMap(earthquakes);
@@ -81,4 +83,25 @@ function createMap(earthquakes) {
       });
     
     L.control.layers(baseMaps, overlayMaps).addTo(myMap);
+
+    // Set up the legend
+    var legend = L.control({ position: "bottomright" });
+    legend.onAdd = function() {
+        var div = L.DomUtil.create("div", "info legend");
+        var limits = geojson.options.limits;
+        var colors = geojson.options.colors;
+        var labels = [];
+
+        div.innerHTML = legendInfo;
+
+        limits.forEach(function(limit, index) {
+            labels.push("<li style=\"background-color: " + colorList[index] + "\"></li>");
+        });
+
+        div.innerHTML += "<ul>" + labels.join("") + "</ul>";
+        return div;
+    };
+
+    // Adding legend to the map
+    legend.addTo(myMap);
 };
